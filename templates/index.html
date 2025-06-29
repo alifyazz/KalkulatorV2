@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Scientific</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="calculator">
+            <div class="display">
+                <div class="expression">{{.Expression}}</div>
+                <div class="result">{{.Result}}</div>
+            </div>
+            
+            <div class="buttons">
+                <!-- Scientific Functions Row -->
+                <div class="row">
+                    <button class="btn scientific" onclick="addFunction('sin')">sin</button>
+                    <button class="btn scientific" onclick="addFunction('cos')">cos</button>
+                    <button class="btn scientific" onclick="addFunction('tan')">tan</button>
+                    <button class="btn scientific" onclick="addFunction('log')">log</button>
+                </div>
+                
+                <div class="row">
+                    <button class="btn scientific" onclick="addFunction('ln')">ln</button>
+                    <button class="btn scientific" onclick="addFunction('sqrt')">√</button>
+                    <button class="btn scientific" onclick="addFunction('pow')">x^y</button>
+                    <button class="btn clear" onclick="clearDisplay()">C</button>
+                </div>
+                
+                <!-- Numbers and Basic Operations -->
+                <div class="row">
+                    <button class="btn number" onclick="addNumber('7')">7</button>
+                    <button class="btn number" onclick="addNumber('8')">8</button>
+                    <button class="btn number" onclick="addNumber('9')">9</button>
+                    <button class="btn operator" onclick="addOperator('+')">+</button>
+                </div>
+                
+                <div class="row">
+                    <button class="btn number" onclick="addNumber('4')">4</button>
+                    <button class="btn number" onclick="addNumber('5')">5</button>
+                    <button class="btn number" onclick="addNumber('6')">6</button>
+                    <button class="btn operator" onclick="addOperator('-')">-</button>
+                </div>
+                
+                <div class="row">
+                    <button class="btn number" onclick="addNumber('1')">1</button>
+                    <button class="btn number" onclick="addNumber('2')">2</button>
+                    <button class="btn number" onclick="addNumber('3')">3</button>
+                    <button class="btn operator" onclick="addOperator('*')">×</button>
+                </div>
+                
+                <div class="row">
+                    <button class="btn number" onclick="addNumber('0')">0</button>
+                    <button class="btn number" onclick="addNumber('.')">.</button>
+                    <button class="btn equals" onclick="calculate()">=</button>
+                    <button class="btn operator" onclick="addOperator('/')">÷</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- History Section -->
+        <div class="history-section">
+            <h3>History Perhitungan</h3>
+            <div class="history-list">
+                {{if .History}}
+                    {{range .History}}
+                    <div class="history-item">
+                        <div class="history-expression">{{.Expression}}</div>
+                        <div class="history-result">= {{.Result}}</div>
+                        <div class="history-time">{{.Timestamp.Format "15:04:05"}}</div>
+                    </div>
+                    {{end}}
+                {{else}}
+                    <div class="no-history">Belum ada history perhitungan</div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+    <form id="calcForm" method="POST" action="/calculate" style="display: none;">
+        <input type="hidden" id="expressionInput" name="expression">
+    </form>
+    
+    <form id="clearForm" method="POST" action="/clear" style="display: none;">
+    </form>
+
+    <script>
+        let currentExpression = '{{.Expression}}';
+        let currentResult = '{{.Result}}';
+        let isNewCalculation = true;
+        
+        function addNumber(num) {
+            if (isNewCalculation) {
+                currentExpression = num;
+                isNewCalculation = false;
+            } else {
+                currentExpression += num;
+            }
+            updateDisplay();
+        }
+        
+        function addOperator(op) {
+            if (currentExpression !== '' && !isOperator(currentExpression.slice(-1))) {
+                currentExpression += op;
+                isNewCalculation = false;
+            }
+            updateDisplay();
+        }
+        
+        function addFunction(func) {
+            if (isNewCalculation) {
+                currentExpression = func;
+                isNewCalculation = false;
+            } else {
+                currentExpression += func;
+            }
+            updateDisplay();
+        }
+        
+        function isOperator(char) {
+            return ['+', '-', '*', '/', '×', '÷'].includes(char);
+        }
+        
+        function clearDisplay() {
+            // Just clear the display and result, don't save to history
+            currentExpression = '';
+            currentResult = '0';
+            isNewCalculation = true;
+            updateDisplay();
+            // Submit clear form to refresh the page
+            document.getElementById('clearForm').submit();
+        }
+        
+        function updateDisplay() {
+            // Format display expression for better readability
+            let displayExpr = currentExpression
+                .replace(/\*/g, '×')
+                .replace(/\//g, '÷');
+            
+            document.querySelector('.expression').textContent = displayExpr;
+        }
+        
+        function calculate() {
+            if (currentExpression.trim() === '') {
+                return;
+            }
+            
+            document.getElementById('expressionInput').value = currentExpression;
+            document.getElementById('calcForm').submit();
+        }
+        
+        // Handle keyboard input
+        document.addEventListener('keydown', function(event) {
+            const key = event.key;
+            
+            if (key >= '0' && key <= '9' || key === '.') {
+                addNumber(key);
+            } else if (['+', '-', '*', '/'].includes(key)) {
+                addOperator(key);
+            } else if (key === 'Enter' || key === '=') {
+                calculate();
+            } else if (key === 'Escape' || key === 'c' || key === 'C') {
+                clearDisplay();
+            } else if (key === 'Backspace') {
+                currentExpression = currentExpression.slice(0, -1);
+                updateDisplay();
+            }
+        });
+        
+        // Initialize display
+        updateDisplay();
+    </script>
+</body>
+</html> 
